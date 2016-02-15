@@ -65,7 +65,10 @@ namespace Squirrel.Windows.Tools
 
             CheckRemoteUpdateInfo
                 .Subscribe(x => {
-                    var vms = x.Select(y => new ReleaseEntryViewModel(y));
+                    var vms = x
+                        .Where(y => y.IsDelta == false)
+                        .Select(y => new ReleaseEntryViewModel(y));
+
                     using (ReleasesList.SuppressChangeNotifications()) {
                         ReleasesList.Clear();
                         ReleasesList.AddRange(vms);
@@ -175,12 +178,10 @@ namespace Squirrel.Windows.Tools
         public ReleaseEntryViewModel(ReleaseEntry model)
         {
             this.Model = model;
-            var name = model.Filename.Split('-')[0];
-
-            VersionString = String.Format("{0} {1} ({2})", 
-                name, model.Version, model.IsDelta ? "Delta" : "Full");
-
             Enabled = true;
+
+            var name = model.Filename.Split('-')[0];
+            VersionString = String.Format("{0} {1}", name, model.Version);
 
             this.WhenAnyValue(x => x.Enabled)
                 .Where(x => x == false)
