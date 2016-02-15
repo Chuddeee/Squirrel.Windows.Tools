@@ -1,0 +1,40 @@
+﻿<Window x:Class="Squirrel.Windows.Tools.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Squirrel.Windows.Tools"
+        mc:Ignorable="d" 
+        Title="MainWindow" Height="350" Width="525">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Label Content="Releases:"/>
+
+        <ListView Grid.Row="1" x:Name="ReleasesList" />
+
+        <Label Name="ReleasesListHint" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Gray" 
+               Content="Type in a release location name" />
+
+        <Grid Grid.Row="2" Margin="0,8,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Label Content="Release Location:"/>
+            <TextBox Grid.Row="1" MinHeight="24" x:Name="ReleaseLocation" />
+
+            <Button x:Name="DoIt" Content="Run" Margin="16,0,0,0" MinWidth="48" Grid.Row="1" Grid.Column="1" />
+        </Grid>
+    </Grid>
+</Window>
