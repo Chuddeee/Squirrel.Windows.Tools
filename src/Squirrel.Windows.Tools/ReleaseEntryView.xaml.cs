@@ -61,7 +61,8 @@ namespace Squirrel.Windows.Tools
         {
             InitializeComponent();
 
-            this.OneWayBind(ViewModel, x => x.VersionString, x => x.VersionString.Text);
+            this.OneWayBind(ViewModel, x => x.VersionString, x => x.VersionString.Content);
+            this.OneWayBind(ViewModel, x => x.Enabled, x => x.IsEnabled);
 
             var actions = new ReactiveList<string>(new string[] {
                 "",
@@ -74,8 +75,7 @@ namespace Squirrel.Windows.Tools
 
             Actions.ItemsSource = actions;
 
-            this.WhenAnyValue(x => x.Actions.SelectedValue)
-                .BindTo(this, x => x.ViewModel.CurrentAction);
+            this.Bind(ViewModel, x => x.CurrentAction, x => x.Actions.SelectedItem);
         }
 
         public ReleaseEntryViewModel ViewModel {

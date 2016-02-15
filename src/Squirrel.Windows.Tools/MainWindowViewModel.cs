@@ -38,6 +38,7 @@ namespace Squirrel.Windows.Tools
         {
             ReleasesListHint = "Type in a release location URL or path to files";
             ReleasesList = new ReactiveList<ReleaseEntryViewModel>();
+            ReleasesList.ChangeTrackingEnabled = true;
 
             CheckRemoteUpdateInfo = ReactiveCommand.CreateAsyncTask(
                 this.WhenAny(x => x.ReleaseLocation, x => !String.IsNullOrWhiteSpace(x.Value)),
@@ -75,9 +76,73 @@ namespace Squirrel.Windows.Tools
                 .Throttle(TimeSpan.FromMilliseconds(750), RxApp.MainThreadScheduler)
                 .InvokeCommand(CheckRemoteUpdateInfo);
 
+            ReleasesList.ItemChanged
+                .Where(x => x.PropertyName == "CurrentAction")
+                .Subscribe(x => updateStartsAndEnds(x.Sender));
+
             DoIt = ReactiveCommand.CreateAsyncTask(
                 this.WhenAny(x => x.ReleasesList, x => x.Value != null && x.Value.Count > 0),
                 async _ => { });
+        }
+
+        void updateStartsAndEnds(ReleaseEntryViewModel changedObject)
+        {
+            // First scan for invalid scenarios
+            int startIdx = -1;
+            int endIdx = -1;
+            int currentIdx = -1;
+
+            for (int i=0; i < ReleasesList.Count; i++) {
+                var current = ReleasesList[i];
+                if (changedObject == current) currentIdx = i;
+
+                if (current.CurrentAction == ReleaseEntryActions.Start) {
+                    if (startIdx >= 0) {
+                        ReleasesList[startIdx].CurrentAction = ReleaseEntryActions.None;
+                        startIdx = i;
+                    }
+
+                    startIdx = i;
+                    continue;
+                }
+
+                if (current.CurrentAction == ReleaseEntryActions.End) {
+                    if (endIdx >= 0) {
+                        current.CurrentAction = ReleaseEntryActions.None;
+                    } else {
+                        endIdx = i;
+                    }
+
+                    endIdx = i;
+                    continue;
+                }
+            }
+
+            if (endIdx < startIdx && endIdx >= 0) goto bogus;
+
+            foreach (var v in ReleasesList) { v.Enabled = true; }
+
+            if (startIdx >= 0) {
+                for (int i=0; i < startIdx; i++) { ReleasesList[i].Enabled = false; }
+            }
+
+            if (endIdx >= 0) {
+                for (int i=endIdx+1; i < ReleasesList.Count; i++) { ReleasesList[i].Enabled = false; }
+            }
+
+            if (startIdx >=0 || endIdx >= 0) {
+                foreach (var v in ReleasesList) {
+                    if (!v.Enabled) continue;
+                    if (v.CurrentAction != ReleaseEntryActions.None) continue;
+
+                    v.CurrentAction = ReleaseEntryActions.Install;
+                }
+            }
+
+            return;
+
+        bogus:
+            foreach (var v in ReleasesList) { v.Enabled = true; }
         }
     }
     public enum ReleaseEntryActions {
@@ -95,6 +160,12 @@ namespace Squirrel.Windows.Tools
 
         public string VersionString { get; private set; }
 
+        bool enabled;
+        public bool Enabled {
+            get { return enabled; }
+            set { this.RaiseAndSetIfChanged(ref enabled, value); }
+        }
+
         ReleaseEntryActions currentAction;
         public ReleaseEntryActions CurrentAction {
             get { return currentAction; }
@@ -108,6 +179,12 @@ namespace Squirrel.Windows.Tools
 
             VersionString = String.Format("{0} {1} ({2})", 
                 name, model.Version, model.IsDelta ? "Delta" : "Full");
+
+            Enabled = true;
+
+            this.WhenAnyValue(x => x.Enabled)
+                .Where(x => x == false)
+                .Subscribe(x => CurrentAction = ReleaseEntryActions.None);
         }
     }
 }

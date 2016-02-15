@@ -12,7 +12,7 @@
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
-        <TextBlock Name="VersionString"></TextBlock>
+        <Label Name="VersionString"></Label>
         <ComboBox Grid.Column="1" Name="Actions" MinWidth="80" />
     </Grid>
 </UserControl>
