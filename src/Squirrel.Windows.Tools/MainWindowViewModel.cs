@@ -95,6 +95,12 @@ namespace Squirrel.Windows.Tools
 
         public string VersionString { get; private set; }
 
+        ReleaseEntryActions currentAction;
+        public ReleaseEntryActions CurrentAction {
+            get { return currentAction; }
+            set { this.RaiseAndSetIfChanged(ref currentAction, value); }
+        }
+
         public ReleaseEntryViewModel(ReleaseEntry model)
         {
             this.Model = model;

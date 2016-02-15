@@ -18,6 +18,7 @@ namespace Squirrel.Windows.Tools
         App()
         {
             Locator.CurrentMutable.Register(() => new ReleaseEntryView(), typeof(IViewFor<ReleaseEntryViewModel>));
+            Locator.CurrentMutable.RegisterConstant(new ReleaseEntryActionToStringConverter(), typeof(IBindingTypeConverter));
         }
     }
 }

@@ -37,8 +37,6 @@ namespace Squirrel.Windows.Tools
             this.BindCommand(ViewModel, x => x.DoIt, x => x.DoIt);
 
             ViewModel = new MainWindowViewModel();
-
-            MessageBox.Show(ViewModel.DoIt.CanExecute(null).ToString());
         }
 
         public MainWindowViewModel ViewModel {
