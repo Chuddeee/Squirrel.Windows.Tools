@@ -100,7 +100,20 @@ namespace Squirrel.Windows.Tools
                             "App already installed",
                             String.Format("App '{0}' is already installed, remove it before running install?", appName)));
 
-                        Console.WriteLine(result);
+                        if (result == RecoveryOptionResult.CancelOperation) {
+                            return;
+                        }
+
+                        if (result == RecoveryOptionResult.RetryOperation) {
+                            using (var mgr = new UpdateManager(null, appName, Environment.ExpandEnvironmentVariables("%LocalAppData%"))) {
+                                await mgr.FullUninstall();
+                            }
+                        }
+                    }
+
+                    foreach (var release in releasesToApply) {
+                        release.ReleaseLocation = this.ReleaseLocation;
+                        await release.ApplyThisRelease.ExecuteAsync(null);
                     }
                 });
         }
@@ -190,13 +203,18 @@ namespace Squirrel.Windows.Tools
         public ReleaseEntry Model { get; private set; }
 
         public string VersionString { get; private set; }
+
         public string Name { get; private set; }
+
+        public string ReleaseLocation { get; set; }
 
         bool enabled;
         public bool Enabled {
             get { return enabled; }
             set { this.RaiseAndSetIfChanged(ref enabled, value); }
         }
+
+        public ReactiveCommand<Unit> ApplyThisRelease { get; protected set; }
 
         ReleaseEntryActions currentAction;
         public ReleaseEntryActions CurrentAction {
@@ -215,6 +233,9 @@ namespace Squirrel.Windows.Tools
             this.WhenAnyValue(x => x.Enabled)
                 .Where(x => x == false)
                 .Subscribe(x => CurrentAction = ReleaseEntryActions.None);
+
+            ApplyThisRelease = ReactiveCommand.CreateAsyncTask(async _ => {
+            });
         }
     }
 }
