@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -37,7 +38,21 @@ namespace Squirrel.Windows.Tools
             this.BindCommand(ViewModel, x => x.DoIt, x => x.DoIt);
 
             ViewModel = new MainWindowViewModel();
+
+            UserError.RegisterHandler<YesNoUserError>(error => {
+                var result = MessageBox.Show(error.ErrorCauseOrResolution, error.ErrorMessage, MessageBoxButton.YesNoCancel, MessageBoxImage.Information);
+                if (result == MessageBoxResult.Yes) return Observable.Return(RecoveryOptionResult.RetryOperation);
+                if (result == MessageBoxResult.No) return Observable.Return(RecoveryOptionResult.FailOperation);
+
+                return Observable.Return(RecoveryOptionResult.CancelOperation);
+            });
+
+            UserError.RegisterHandler<OkUserError>(error => {
+                var result = MessageBox.Show(error.ErrorCauseOrResolution, error.ErrorMessage, MessageBoxButton.OK, MessageBoxImage.Error);
+                return Observable.Return(RecoveryOptionResult.FailOperation);
+            });
         }
+
 
         public MainWindowViewModel ViewModel {
             get { return (MainWindowViewModel)GetValue(ViewModelProperty); }

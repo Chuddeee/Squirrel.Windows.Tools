@@ -84,8 +84,25 @@ namespace Squirrel.Windows.Tools
                 .Subscribe(x => updateStartsAndEnds(x.Sender));
 
             DoIt = ReactiveCommand.CreateAsyncTask(
-                this.WhenAny(x => x.ReleasesList, x => x.Value != null && x.Value.Count > 0),
-                async _ => { });
+                this.WhenAny(x => x.ReleasesList.Count, x => x.Value > 0),
+                async _ => {
+                    var releasesToApply = ReleasesList.Where(x => x.Enabled).ToList();
+                    if (releasesToApply.Count < 1 || releasesToApply.All(x => x.CurrentAction == ReleaseEntryActions.None)) {
+                        await UserError.Throw(new OkUserError("Nothing to do", "At least one release must have the 'Start' action"));
+                        return;
+                    }
+
+                    var appName = ReleasesList[0].Name;
+                    var rootAppDir = Environment.ExpandEnvironmentVariables("%LocalAppData%\\" + appName);
+
+                    if (Directory.Exists(rootAppDir)) {
+                        var result = await UserError.Throw(new YesNoUserError(
+                            "App already installed",
+                            String.Format("App '{0}' is already installed, remove it before running install?", appName)));
+
+                        Console.WriteLine(result);
+                    }
+                });
         }
 
         void updateStartsAndEnds(ReleaseEntryViewModel changedObject)
@@ -148,6 +165,17 @@ namespace Squirrel.Windows.Tools
             foreach (var v in ReleasesList) { v.Enabled = true; }
         }
     }
+
+    public class YesNoUserError : UserError
+    {
+        public YesNoUserError(string errorMessage, string errorCauseOrResolution) : base(errorMessage, errorCauseOrResolution) { }
+    }
+
+    public class OkUserError : UserError
+    {
+        public OkUserError(string errorMessage, string errorCauseOrResolution) : base(errorMessage, errorCauseOrResolution) { }
+    }
+
     public enum ReleaseEntryActions {
         None = 0,
         Start,
@@ -162,6 +190,7 @@ namespace Squirrel.Windows.Tools
         public ReleaseEntry Model { get; private set; }
 
         public string VersionString { get; private set; }
+        public string Name { get; private set; }
 
         bool enabled;
         public bool Enabled {
@@ -180,8 +209,8 @@ namespace Squirrel.Windows.Tools
             this.Model = model;
             Enabled = true;
 
-            var name = model.Filename.Split('-')[0];
-            VersionString = String.Format("{0} {1}", name, model.Version);
+            Name = model.Filename.Split('-')[0];
+            VersionString = String.Format("{0} {1}", Name, model.Version);
 
             this.WhenAnyValue(x => x.Enabled)
                 .Where(x => x == false)
