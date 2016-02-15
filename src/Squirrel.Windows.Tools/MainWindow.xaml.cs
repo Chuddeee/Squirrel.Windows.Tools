@@ -32,6 +32,8 @@ namespace Squirrel.Windows.Tools
             this.WhenAny(x => x.ViewModel.ReleasesListHint, x => !String.IsNullOrWhiteSpace(x.Value))
                 .BindTo(this, x => x.ReleasesListHint.Visibility);
 
+            this.OneWayBind(ViewModel, x => x.ReleasesList, x => x.ReleasesList.ItemsSource);
+
             this.BindCommand(ViewModel, x => x.DoIt, x => x.DoIt);
 
             ViewModel = new MainWindowViewModel();

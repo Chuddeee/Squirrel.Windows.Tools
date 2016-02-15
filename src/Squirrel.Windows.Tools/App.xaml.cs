@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ReactiveUI;
+using Splat;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -13,5 +15,9 @@ namespace Squirrel.Windows.Tools
     /// </summary>
     public partial class App : Application
     {
+        App()
+        {
+            Locator.CurrentMutable.Register(() => new ReleaseEntryView(), typeof(IViewFor<ReleaseEntryViewModel>));
+        }
     }
 }

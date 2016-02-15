@@ -19,10 +19,7 @@ namespace Squirrel.Windows.Tools
 
         public ReactiveCommand<Unit> DoIt { get; private set; }
 
-        ObservableAsPropertyHelper<List<ReleaseEntry>> updateInfo;
-        public List<ReleaseEntry> UpdateInfo {
-            get { return updateInfo.Value; }
-        }
+        public ReactiveList<ReleaseEntryViewModel> ReleasesList { get; private set; }
 
         string releaseLocation;
         public string ReleaseLocation {
@@ -40,6 +37,7 @@ namespace Squirrel.Windows.Tools
         public MainWindowViewModel()
         {
             ReleasesListHint = "Type in a release location URL or path to files";
+            ReleasesList = new ReactiveList<ReleaseEntryViewModel>();
 
             CheckRemoteUpdateInfo = ReactiveCommand.CreateAsyncTask(
                 this.WhenAny(x => x.ReleaseLocation, x => !String.IsNullOrWhiteSpace(x.Value)),
@@ -64,15 +62,46 @@ namespace Squirrel.Windows.Tools
             CheckRemoteUpdateInfo.ThrownExceptions
                 .Subscribe(ex => ReleasesListHint = "Failed to check for updates: " + ex.Message);
 
-            CheckRemoteUpdateInfo.ToProperty(this, x => x.UpdateInfo, out updateInfo);
+            CheckRemoteUpdateInfo
+                .Subscribe(x => {
+                    var vms = x.Select(y => new ReleaseEntryViewModel(y));
+                    using (ReleasesList.SuppressChangeNotifications()) {
+                        ReleasesList.Clear();
+                        ReleasesList.AddRange(vms);
+                    }
+                });
 
             this.WhenAnyValue(x => x.ReleaseLocation)
                 .Throttle(TimeSpan.FromMilliseconds(750), RxApp.MainThreadScheduler)
                 .InvokeCommand(CheckRemoteUpdateInfo);
 
             DoIt = ReactiveCommand.CreateAsyncTask(
-                this.WhenAny(x => x.UpdateInfo, x => x.Value != null && x.Value.Count > 0),
+                this.WhenAny(x => x.ReleasesList, x => x.Value != null && x.Value.Count > 0),
                 async _ => { });
+        }
+    }
+    public enum ReleaseEntryActions {
+        None = 0,
+        Start,
+        Install,
+        Skip,
+        InstallAndPause,
+        End
+    }
+
+    public class ReleaseEntryViewModel : ReactiveObject
+    {
+        public ReleaseEntry Model { get; private set; }
+
+        public string VersionString { get; private set; }
+
+        public ReleaseEntryViewModel(ReleaseEntry model)
+        {
+            this.Model = model;
+            var name = model.Filename.Split('-')[0];
+
+            VersionString = String.Format("{0} {1} ({2})", 
+                name, model.Version, model.IsDelta ? "Delta" : "Full");
         }
     }
 }

@@ -15,7 +15,13 @@
 
         <Label Content="Releases:"/>
 
-        <ListView Grid.Row="1" x:Name="ReleasesList" />
+        <ListView Grid.Row="1" x:Name="ReleasesList">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
 
         <Label Name="ReleasesListHint" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Gray" 
                Content="Type in a release location name" />
